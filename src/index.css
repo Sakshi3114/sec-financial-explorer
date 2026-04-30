@@ -1,1 +1,285 @@
+/* Import fonts */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans&family=Playfair+Display&family=JetBrains+Mono&display=swap");
+
 @import "tailwindcss";
+
+/* THEME */
+@theme {
+  --color-surface: #0f1117;
+  --color-surface-1: #161b27;
+  --color-surface-2: #1c2333;
+  --color-surface-3: #232b3e;
+
+  --color-brand: #00c896;
+  --color-brand-dim: #009e78;
+  --color-brand-glow: #00ffbf;
+  --color-brand-muted: rgba(0, 200, 150, 0.12);
+
+  --color-accent: #3d6bff;
+  --color-bull: #22c55e;
+  --color-bear: #f43f5e;
+  --color-warn: #f59e0b;
+
+  --color-ink: #c8d6ee;
+  --color-ink-dim: #7a90b0;
+  --color-ink-faint: #3a4a65;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-sans: "DM Sans", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --shadow-glow-card: 0 4px 32px rgba(0, 0, 0, 0.45);
+  --shadow-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* BASE */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface-1);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink-faint);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brand);
+  }
+
+  ::selection {
+    background: rgba(0, 200, 150, 0.28);
+    color: #fff;
+  }
+}
+
+/* COMPONENTS */
+@layer components {
+  .card {
+    @apply bg-surface-1 border border-white/[0.07] rounded-2xl;
+    box-shadow: var(--shadow-glow-card), var(--shadow-inner-top);
+  }
+
+  .card-sm {
+    @apply bg-surface-2 border border-white/[0.07] rounded-xl;
+    box-shadow: var(--shadow-glow-card);
+  }
+
+  /* BASE BUTTON (use in JSX: class="btn btn-brand") */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] select-none;
+  }
+
+  /* VARIANTS (NO @apply btn here) */
+  .btn-brand {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200
+           bg-brand text-surface px-5 py-2.5 text-sm hover:bg-brand-glow;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200
+           border border-white/10 text-ink px-5 py-2.5 text-sm
+           hover:border-brand/40 hover:text-brand hover:bg-brand-muted;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-200
+           w-9 h-9 border border-white/10 text-ink-dim
+           hover:border-white/20 hover:text-ink hover:bg-white/5;
+  }
+
+  .input {
+    @apply w-full bg-surface-2 border border-white/[0.07] rounded-xl px-4 py-3 text-sm text-ink
+           placeholder-ink-dim outline-none transition-all duration-200
+           focus:border-brand/50 focus:bg-surface-1;
+  }
+
+  /* BASE BADGE */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border;
+  }
+
+  /* VARIANTS */
+  .badge-brand {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border
+           text-brand bg-brand/10 border-brand/25;
+  }
+
+  .badge-bull {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border
+           text-bull bg-bull/10 border-bull/25;
+  }
+
+  .badge-bear {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border
+           text-bear bg-bear/10 border-bear/25;
+  }
+
+  .badge-warn {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border
+           text-warn bg-warn/10 border-warn/25;
+  }
+
+  .badge-muted {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border
+           text-ink-dim bg-white/5 border-white/10;
+  }
+
+  .badge-accent {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium border
+           text-accent bg-accent/10 border-accent/25;
+  }
+
+  .label {
+    @apply text-[10px] font-mono uppercase tracking-[0.12em] text-ink-dim;
+  }
+
+  .value-xl {
+    @apply font-display font-bold text-2xl text-white;
+  }
+  .value-lg {
+    @apply font-display font-bold text-xl text-white;
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-2) 25%,
+      var(--color-surface-3) 50%,
+      var(--color-surface-2) 75%
+    );
+    background-size: 600px 100%;
+    animation: shimmer 1.6s infinite;
+    border-radius: 0.5rem;
+  }
+
+  .divider {
+    @apply border-t border-white/[0.07];
+  }
+
+  .tab-btn {
+    @apply flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap;
+  }
+
+  .tab-btn-active {
+    @apply border-brand text-brand;
+  }
+  .tab-btn-idle {
+    @apply border-transparent text-ink-dim hover:text-ink hover:border-white/20;
+  }
+}
+
+/* UTILITIES */
+@layer utilities {
+  .text-brand-grad {
+    background: linear-gradient(135deg, #00c896 0%, #3d6bff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* KEYFRAMES + ANIMATIONS (unchanged) */
+@keyframes shimmer {
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.45s ease both;
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+.animate-slide-down {
+  animation: slideDown 0.25s ease both;
+}
+.animate-pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-150 {
+  animation-delay: 150ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-250 {
+  animation-delay: 250ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}

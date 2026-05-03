@@ -1,0 +1,21 @@
+# ── SEC EDGAR proxies (fixes CORS in production) ─────────────────────────────
+
+[[redirects]]
+  from = "/sec-api/*"
+  to = "https://data.sec.gov/:splat"
+  status = 200
+  force = true
+  headers = { User-Agent = "SECExplorer/1.0 dev@example.com" }
+
+[[redirects]]
+  from = "/sec-tickers/*"
+  to = "https://www.sec.gov/:splat"
+  status = 200
+  force = true
+  headers = { User-Agent = "SECExplorer/1.0 dev@example.com" }
+
+# ── SPA fallback ──────────────────────────────────────────────────────────────
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

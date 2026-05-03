@@ -17,7 +17,7 @@ export default function MetricCard({ metricKey, data, isActive, onClick }) {
         ${
           isActive
             ? "border-brand/40 bg-brand/5 ring-1 ring-brand/20"
-            : "hover:border-white/15 hover:bg-white/[0.04]"
+            : "hover:border-white/15 hover:bg-white/4"
         }`}
     >
       {/* Icon + growth pill */}
@@ -64,7 +64,7 @@ export default function MetricCard({ metricKey, data, isActive, onClick }) {
       {/* Active underline */}
       {isActive && (
         <div
-          className="mt-3 h-[2px] rounded-full"
+          className="mt-3 h-0.5 rounded-full"
           style={{
             background: `linear-gradient(to right, ${def.color}, transparent)`,
           }}

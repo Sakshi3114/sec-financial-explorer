@@ -12,7 +12,7 @@ export default function SearchDropdown({
       {/* Error */}
       {error && (
         <div className="px-4 py-3 flex items-center gap-2 text-sm text-bear/80">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
       )}
@@ -31,15 +31,15 @@ export default function SearchDropdown({
 
       {/* Results */}
       {results.length > 0 && (
-        <ul className="max-h-72 overflow-y-auto divide-y divide-white/[0.05]">
+        <ul className="max-h-72 overflow-y-auto divide-y divide-white/5">
           {results.map((company) => (
             <li key={company.cik}>
               <button
                 onClick={() => onSelect(company)}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/[0.05] transition-colors text-left group"
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors text-left group"
               >
                 {/* Ticker chip */}
-                <div className="flex-shrink-0 w-14 text-center">
+                <div className="shrink-0 w-14 text-center">
                   <span className="badge-brand text-[11px] px-2 py-0.5 rounded font-mono font-semibold">
                     {company.ticker}
                   </span>
@@ -55,7 +55,7 @@ export default function SearchDropdown({
                   </p>
                 </div>
 
-                <ChevronRight className="w-4 h-4 text-ink-dim group-hover:text-brand transition-colors flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 text-ink-dim group-hover:text-brand transition-colors shrink-0" />
               </button>
             </li>
           ))}

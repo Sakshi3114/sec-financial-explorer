@@ -1,30 +1,37 @@
-import { createContext, useContext, useReducer, useCallback } from "react";
 import {
-  MOCK_COMPANY,
-  MOCK_METRICS,
-  MOCK_SEARCH_RESULTS,
-} from "../data/mockData";
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useRef,
+} from "react";
+import {
+  fetchCompanyTickers,
+  fetchCompanyFacts,
+  fetchCompanySubmissions,
+  searchFromTickers,
+  extractMetricSeries,
+} from "../utils/api";
+import { METRIC_DEFS } from "../constants";
 
-// ── State shape ──────────────────────────────────────────────────────────────
+// ─── Initial state ────────────────────────────────────────────────────────────
 const init = {
-  // search
   searchQuery: "",
   searchResults: [],
   searchLoading: false,
   searchError: null,
-  // company
-  company: null,
-  companyInfo: null,
-  metrics: {},
-  // ui
+
+  company: null, // { name, ticker, cik }
+  companyInfo: null, // shaped from /submissions response
+  metrics: {}, // { [metricKey]: { series, latest, growth } }
+
   loading: false,
   error: null,
   activeMetric: "revenue",
   activeTab: "overview",
-  useMock: true, // ← flip to false when wiring real API
 };
 
-// ── Actions ──────────────────────────────────────────────────────────────────
+// ─── Actions ──────────────────────────────────────────────────────────────────
 const A = {
   SET_SEARCH_QUERY: "SET_SEARCH_QUERY",
   SET_SEARCH_RESULTS: "SET_SEARCH_RESULTS",
@@ -40,7 +47,7 @@ const A = {
   CLEAR_SEARCH: "CLEAR_SEARCH",
 };
 
-// ── Reducer ──────────────────────────────────────────────────────────────────
+// ─── Reducer ──────────────────────────────────────────────────────────────────
 function reducer(state, { type, payload }) {
   switch (type) {
     case A.SET_SEARCH_QUERY:
@@ -95,38 +102,115 @@ function reducer(state, { type, payload }) {
   }
 }
 
-// ── Context ──────────────────────────────────────────────────────────────────
+// ─── Context ──────────────────────────────────────────────────────────────────
 const Ctx = createContext(null);
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, init);
 
-  // Search companies (mock)
+  // Cache the tickers list in a ref so we only fetch it once per session.
+  // First search hits the network; every subsequent search is instant.
+  const tickersCacheRef = useRef(null);
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  // Flow:
+  //   1. GET https://www.sec.gov/files/company_tickers.json  (cached after 1st call)
+  //   2. Filter the flat array by name / ticker / cik_str
+  //   3. Return top 10, exact ticker matches first
   const searchCompanies = useCallback(async (query) => {
     if (!query || query.trim().length < 2) {
       dispatch({ type: A.SET_SEARCH_RESULTS, payload: [] });
       return;
     }
+
     dispatch({ type: A.SET_SEARCH_LOADING, payload: true });
     dispatch({ type: A.SET_SEARCH_QUERY, payload: query });
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 400));
-    const q = query.toLowerCase();
-    const results = MOCK_SEARCH_RESULTS.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) || c.ticker.toLowerCase().includes(q)
-    );
-    dispatch({ type: A.SET_SEARCH_RESULTS, payload: results });
+
+    try {
+      // Load tickers list once, then reuse from cache
+      if (!tickersCacheRef.current) {
+        tickersCacheRef.current = await fetchCompanyTickers();
+        // tickersCacheRef.current is now:
+        // { "0": { cik_str: 320193, ticker: "AAPL", title: "Apple Inc." }, ... }
+      }
+
+      const results = searchFromTickers(tickersCacheRef.current, query.trim());
+      dispatch({ type: A.SET_SEARCH_RESULTS, payload: results });
+    } catch (err) {
+      dispatch({ type: A.SET_SEARCH_ERROR, payload: err.message });
+    }
   }, []);
 
-  // Load company data (mock)
+  // ── Load Company ──────────────────────────────────────────────────────────
+  // Flow:
+  //   1. company.cik is already padded to 10 digits from searchFromTickers
+  //      e.g. company.cik = "0000320193"
+  //
+  //   2. Parallel fetch:
+  //      a. GET /submissions/CIK0000320193.json   → metadata
+  //      b. GET /api/xbrl/companyfacts/CIK0000320193.json → all XBRL figures
+  //
+  //   3. From facts, extract each metric:
+  //      facts.facts["us-gaap"]["Revenues"]       → revenue series
+  //      facts.facts["us-gaap"]["Assets"]         → assets series
+  //      facts.facts["us-gaap"]["Liabilities"]    → liabilities series
+  //      ... etc.
   const loadCompany = useCallback(async (company) => {
     dispatch({ type: A.SET_LOADING, payload: true });
     dispatch({ type: A.CLEAR_COMPANY });
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 900));
-    dispatch({ type: A.SET_COMPANY, payload: { company, info: MOCK_COMPANY } });
-    dispatch({ type: A.SET_METRICS, payload: MOCK_METRICS });
+
+    try {
+      // company.cik is already padded: "0000320193"
+      const [rawInfo, facts] = await Promise.all([
+        fetchCompanySubmissions(company.cik),
+        fetchCompanyFacts(company.cik),
+      ]);
+
+      // Shape the submissions response for the UI
+      const companyInfo = {
+        name: rawInfo.name,
+        cik: rawInfo.cik,
+        sic: rawInfo.sic,
+        sicDescription: rawInfo.sicDescription,
+        stateOfIncorporation: rawInfo.stateOfIncorporation,
+        exchanges: rawInfo.exchanges ?? [],
+        fiscalYearEnd: rawInfo.fiscalYearEnd,
+        filingCount: rawInfo.filings?.recent?.form?.length ?? 0,
+      };
+
+      dispatch({
+        type: A.SET_COMPANY,
+        payload: { company, info: companyInfo },
+      });
+
+      // Extract every metric from facts.facts["us-gaap"] / facts.facts["ifrs-full"]
+      // Each METRIC_DEF has an ordered list of XBRL tags to try, e.g.:
+      //   revenue → ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", ...]
+      //   assets  → ["Assets"]
+      //   liabilities → ["Liabilities"]
+      const processed = {};
+
+      for (const [key, def] of Object.entries(METRIC_DEFS)) {
+        // EPS is stored under "USD/shares"; everything else under "USD"
+        const preferredUnit = def.format === "decimal" ? "USD/shares" : "USD";
+
+        const series = extractMetricSeries(facts, def.tags, preferredUnit);
+        if (series.length === 0) continue; // company didn't report this metric
+
+        const latest = series[series.length - 1];
+        const prev = series.length >= 2 ? series[series.length - 2] : null;
+        const growth =
+          prev?.value != null
+            ? ((latest.value - prev.value) / Math.abs(prev.value)) * 100
+            : null;
+
+        processed[key] = { series, latest, growth };
+      }
+
+      dispatch({ type: A.SET_METRICS, payload: processed });
+    } catch (err) {
+      dispatch({ type: A.SET_ERROR, payload: err.message });
+    }
   }, []);
 
   const setActiveMetric = useCallback(

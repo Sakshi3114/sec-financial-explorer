@@ -15,12 +15,11 @@ import { useApp } from "../../context/AppContext";
 import { METRIC_DEFS } from "../../constants";
 import { formatValue } from "../../utils/formatters";
 
-/* ── Custom tooltip ────────────────────────────────────────────────── */
 function ChartTooltip({ active, payload, label, format, color }) {
   if (!active || !payload?.length) return null;
   const val = payload[0]?.value;
   return (
-    <div className="card-sm px-4 py-3 border border-white/15 shadow-2xl shadow-black/60 min-w-[140px]">
+    <div className="card-sm px-4 py-3 border border-white/15 shadow-2xl shadow-black/60 min-w-35">
       <p className="font-mono text-[11px] text-ink-dim mb-1">FY {label}</p>
       <p className="font-display font-bold text-lg" style={{ color }}>
         {formatValue(val, format)}
@@ -34,7 +33,6 @@ function ChartTooltip({ active, payload, label, format, color }) {
   );
 }
 
-/* ── Toggle button ─────────────────────────────────────────────────── */
 function Toggle({ label, active, onClick }) {
   return (
     <button
@@ -50,7 +48,6 @@ function Toggle({ label, active, onClick }) {
   );
 }
 
-/* ── Main chart ────────────────────────────────────────────────────── */
 export default function FinancialChart() {
   const { metrics, activeMetric } = useApp();
   const [type, setType] = useState("area");

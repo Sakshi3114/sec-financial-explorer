@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/sec-api/(.*)",     "destination": "https://data.sec.gov/$1" },
+    { "source": "/sec-tickers/(.*)", "destination": "https://www.sec.gov/$1"  },
+    { "source": "/(.*)",             "destination": "/index.html"             }
+  ]
+}
